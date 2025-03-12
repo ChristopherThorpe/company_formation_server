@@ -1,5 +1,5 @@
 import pytest
-from app import CompanyFormation, generate_delaware_articles
+from app import CompanyFormation, generate_delaware_articles, generate_california_articles, generate_california_llc_certificate
 from pydantic import ValidationError
 from PyPDF2 import PdfReader
 import io
@@ -62,3 +62,43 @@ def test_pdf_generation():
     assert "THIRD: The purpose of the corporation is to engage" in text
     assert "FOURTH: The total number of shares of stock" in text
     assert "IN WITNESS WHEREOF, the undersigned" in text
+
+def test_california_corporation_pdf():
+    test_data = {
+        "company_name": "California Test Corp",
+        "state_of_formation": "CA",
+        "company_type": "corporation",
+        "incorporator_name": "Testy McTestface"
+    }
+    
+    pdf_buffer = generate_california_articles(CompanyFormation(**test_data))
+    pdf_buffer.seek(0)
+    
+    reader = PdfReader(pdf_buffer)
+    text = "\n".join(page.extract_text() for page in reader.pages)
+    
+    assert "California Test Corp" in text
+    assert "ARTICLES OF INCORPORATION" in text
+    assert "ARTICLE I: The name of this corporation is:" in text
+    assert "ARTICLE II: The purpose of the corporation" in text
+    assert "ARTICLE III: The name and address in California" in text
+
+def test_california_llc_pdf():
+    test_data = {
+        "company_name": "California Test LLC",
+        "state_of_formation": "CA",
+        "company_type": "LLC",
+        "incorporator_name": "Testy McTestface"
+    }
+    
+    pdf_buffer = generate_california_llc_certificate(CompanyFormation(**test_data))
+    pdf_buffer.seek(0)
+    
+    reader = PdfReader(pdf_buffer)
+    text = "\n".join(page.extract_text() for page in reader.pages)
+    
+    assert "California Test LLC" in text
+    assert "ARTICLES OF ORGANIZATION" in text
+    assert "ARTICLE I: The name of the limited liability company is:" in text
+    assert "ARTICLE II: The purpose of the limited liability company" in text
+    assert "ARTICLE III: The name and address in California" in text

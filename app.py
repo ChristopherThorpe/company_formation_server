@@ -110,6 +110,74 @@ def generate_delaware_llc_certificate(company_data: CompanyFormation) -> BytesIO
     buffer.seek(0)
     return buffer
 
+def generate_california_articles(company_data: CompanyFormation) -> BytesIO:
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+    
+    # Set up the document
+    c.setFont("Helvetica-Bold", 16)
+    c.drawCentredString(300, 750, "ARTICLES OF INCORPORATION")
+    c.setFont("Helvetica", 12)
+    
+    # Article I - Company Name
+    c.drawString(50, 700, "ARTICLE I: The name of this corporation is:")
+    c.drawString(70, 680, company_data.company_name)
+    
+    # Article II - Purpose
+    c.drawString(50, 630, "ARTICLE II: The purpose of the corporation is to engage in any lawful act or activity")
+    c.drawString(50, 610, "for which a corporation may be organized under the General Corporation Law of California.")
+    
+    # Article III - Agent for Service
+    c.drawString(50, 560, "ARTICLE III: The name and address in California of the corporation's initial agent for service of process is:")
+    c.drawString(70, 540, "California Registered Agent, Inc.")
+    c.drawString(70, 520, "123 Main Street")
+    c.drawString(70, 500, "Los Angeles, CA 90001")
+    
+    # Incorporator
+    c.drawString(50, 200, f"IN WITNESS WHEREOF, the undersigned, being the incorporator hereinbefore named,")
+    c.drawString(50, 180, f"has executed these Articles of Incorporation this {datetime.now().strftime('%d')} day of")
+    c.drawString(50, 160, f"{datetime.now().strftime('%B, %Y')}.")
+    
+    c.drawString(50, 100, "Incorporator:")
+    c.drawString(70, 80, company_data.incorporator_name)
+    
+    c.save()
+    buffer.seek(0)
+    return buffer
+
+def generate_california_llc_certificate(company_data: CompanyFormation) -> BytesIO:
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+    
+    # Set up the document
+    c.setFont("Helvetica-Bold", 16)
+    c.drawCentredString(300, 750, "ARTICLES OF ORGANIZATION")
+    c.setFont("Helvetica", 12)
+    
+    # Article I - Company Name
+    c.drawString(50, 700, "ARTICLE I: The name of the limited liability company is:")
+    c.drawString(70, 680, company_data.company_name)
+    
+    # Article II - Purpose
+    c.drawString(50, 630, "ARTICLE II: The purpose of the limited liability company is to engage in any lawful business.")
+    
+    # Article III - Agent for Service
+    c.drawString(50, 560, "ARTICLE III: The name and address in California of the LLC's initial agent for service of process is:")
+    c.drawString(70, 540, "California Registered Agent, Inc.")
+    c.drawString(70, 520, "123 Main Street")
+    c.drawString(70, 500, "Los Angeles, CA 90001")
+    
+    # Execution
+    c.drawString(50, 200, f"IN WITNESS WHEREOF, the undersigned has executed these Articles of Organization this {datetime.now().strftime('%d')} day of")
+    c.drawString(50, 180, f"{datetime.now().strftime('%B, %Y')}.")
+    
+    c.drawString(50, 100, "Authorized Person:")
+    c.drawString(70, 80, company_data.incorporator_name)
+    
+    c.save()
+    buffer.seek(0)
+    return buffer
+
 @app.route('/form-company', methods=['POST'])
 def form_company():
     try:
@@ -133,17 +201,24 @@ def form_company():
                 pdf_buffer = generate_delaware_llc_certificate(company_data)
             else:
                 return jsonify({"error": "Unsupported company type"}), 400
-    
-            return send_file(
-                pdf_buffer,
-                mimetype='application/pdf',
-                as_attachment=True,
-                download_name=f"{company_data.company_name}_certificate.pdf"
-            )
+        elif company_data.state_of_formation == 'CA':
+            if company_data.company_type == 'corporation':
+                pdf_buffer = generate_california_articles(company_data)
+            elif company_data.company_type == 'LLC':
+                pdf_buffer = generate_california_llc_certificate(company_data)
+            else:
+                return jsonify({"error": "Unsupported company type"}), 400
         else:
             return jsonify({
-                "error": "Only Delaware entities are supported at this time"
-            }), 400    
+                "error": "Only Delaware and California entities are supported at this time"
+            }), 400
+    
+        return send_file(
+            pdf_buffer,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=f"{company_data.company_name}_certificate.pdf"
+        )
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
@@ -164,9 +239,15 @@ def form_company_schema():
         },
         {
             "company_name": "Tech Innovators Co.",
-            "state_of_formation": "DE",
+            "state_of_formation": "CA",
             "company_type": "corporation",
             "incorporator_name": "Michael Johnson"
+        },
+        {
+            "company_name": "California Dreaming, LLC",
+            "state_of_formation": "CA",
+            "company_type": "LLC",
+            "incorporator_name": "Emily Chen"
         }
     ]
     return jsonify(examples)
