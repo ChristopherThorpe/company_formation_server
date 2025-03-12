@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, send_file
 from pydantic import BaseModel, Field, validator
-from typing import Literal
+from typing import Literal, List
 import re
 from io import BytesIO
 from reportlab.pdfgen import canvas
@@ -15,6 +15,29 @@ class CompanyFormation(BaseModel):
     state_of_formation: str = Field(..., description="US state or territory")
     company_type: Literal["corporation", "LLC"] = Field(..., description="Type of company")
     incorporator_name: str = Field(..., description="Name of incorporator")
+
+class BylawsRequest(BaseModel):
+    company_name: str = Field(..., description="Company name")
+    principal_office: str = Field(..., description="Principal office address")
+    fiscal_year_end: str = Field(..., description="End of fiscal year (MM-DD)")
+    board_size: int = Field(..., description="Number of directors on the board", ge=1)
+    officer_titles: List[str] = Field(..., description="List of officer positions")
+    annual_meeting_month: str = Field(..., description="Month for annual shareholder meeting")
+    quorum_percentage: int = Field(..., description="Percentage of shareholders needed for quorum", ge=0, le=100)
+
+    @validator('fiscal_year_end')
+    def validate_fiscal_year_end(cls, v):
+        if not re.match(r'^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$', v):
+            raise ValueError('Fiscal year end must be in MM-DD format')
+        return v
+
+    @validator('annual_meeting_month')
+    def validate_annual_meeting_month(cls, v):
+        months = ['January', 'February', 'March', 'April', 'May', 'June',
+                 'July', 'August', 'September', 'October', 'November', 'December']
+        if v not in months:
+            raise ValueError('Annual meeting month must be a valid month name')
+        return v
 
     @validator('company_name')
     def validate_company_name(cls, v):
@@ -304,6 +327,76 @@ def company_form():
     </body>
     </html>
     '''
+
+def generate_bylaws(bylaws_data: BylawsRequest) -> BytesIO:
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+    
+    # Title
+    c.setFont("Helvetica-Bold", 16)
+    c.drawCentredString(300, 750, "CORPORATE BYLAWS OF")
+    c.drawCentredString(300, 730, bylaws_data.company_name.upper())
+    
+    # Article I - Offices
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(50, 680, "ARTICLE I - OFFICES")
+    c.setFont("Helvetica", 12)
+    c.drawString(50, 660, "The principal office of the corporation shall be located at:")
+    c.drawString(70, 640, bylaws_data.principal_office)
+    
+    # Article II - Shareholders Meetings
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(50, 600, "ARTICLE II - SHAREHOLDERS MEETINGS")
+    c.setFont("Helvetica", 12)
+    c.drawString(50, 580, f"1. Annual Meeting. The annual meeting of shareholders shall be held in")
+    c.drawString(70, 560, f"{bylaws_data.annual_meeting_month} of each year.")
+    c.drawString(50, 540, f"2. Quorum. {bylaws_data.quorum_percentage}% of the outstanding shares shall constitute")
+    c.drawString(70, 520, "a quorum for the transaction of business.")
+    
+    # Article III - Board of Directors
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(50, 480, "ARTICLE III - BOARD OF DIRECTORS")
+    c.setFont("Helvetica", 12)
+    c.drawString(50, 460, f"1. Number. The Board of Directors shall consist of {bylaws_data.board_size}")
+    c.drawString(70, 440, "director(s).")
+    
+    # Article IV - Officers
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(50, 400, "ARTICLE IV - OFFICERS")
+    c.setFont("Helvetica", 12)
+    c.drawString(50, 380, "1. Officers. The officers of the corporation shall be:")
+    y = 360
+    for title in bylaws_data.officer_titles:
+        c.drawString(70, y, f"- {title}")
+        y -= 20
+    
+    # Article V - Fiscal Year
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(50, y-20, "ARTICLE V - FISCAL YEAR")
+    c.setFont("Helvetica", 12)
+    c.drawString(50, y-40, f"The fiscal year of the corporation shall end on {bylaws_data.fiscal_year_end}")
+    c.drawString(50, y-60, "of each year.")
+    
+    c.save()
+    buffer.seek(0)
+    return buffer
+
+@app.route('/generate-bylaws', methods=['POST'])
+def generate_company_bylaws():
+    try:
+        data = request.get_json()
+        bylaws_data = BylawsRequest(**data)
+        pdf_buffer = generate_bylaws(bylaws_data)
+        
+        return send_file(
+            pdf_buffer,
+            download_name=f"{bylaws_data.company_name.replace(' ', '_')}_bylaws.pdf",
+            mimetype='application/pdf'
+        )
+    except ValidationError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": "An unexpected error occurred"}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))
