@@ -69,6 +69,10 @@ def generate_delaware_articles(company_data: CompanyFormation) -> BytesIO:
     c.drawString(50, 100, "Incorporator:")
     c.drawString(70, 80, company_data.incorporator_name)
     
+    # Add "made with Potemkin" at the bottom
+    c.setFont("Helvetica", 10)
+    c.drawString(50, 40, "made with Potemkin")
+    
     c.save()
     buffer.seek(0)
     return buffer
@@ -105,6 +109,10 @@ def generate_delaware_llc_certificate(company_data: CompanyFormation) -> BytesIO
     
     c.drawString(50, 100, "Authorized Person:")
     c.drawString(70, 80, company_data.incorporator_name)
+    
+    # Add "made with Potemkin" at the bottom
+    c.setFont("Helvetica", 10)
+    c.drawString(50, 40, "made with Potemkin")
     
     c.save()
     buffer.seek(0)

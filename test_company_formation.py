@@ -62,3 +62,4 @@ def test_pdf_generation():
     assert "THIRD: The purpose of the corporation is to engage" in text
     assert "FOURTH: The total number of shares of stock" in text
     assert "IN WITNESS WHEREOF, the undersigned" in text
+    assert "made with Potemkin" in text
