@@ -1,7 +1,7 @@
 import pytest
 from app import CompanyFormation, generate_delaware_articles, generate_california_articles, generate_california_llc_certificate
 from pydantic import ValidationError
-from PyPDF2 import PdfReader
+from pypdf import PdfReader
 import io
 
 # Test data
