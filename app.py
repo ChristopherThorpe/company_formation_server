@@ -178,6 +178,75 @@ def generate_california_llc_certificate(company_data: CompanyFormation) -> Bytes
     buffer.seek(0)
     return buffer
 
+
+def generate_nevada_articles(company_data: CompanyFormation) -> BytesIO:
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+    
+    # Set up the document
+    c.setFont("Helvetica-Bold", 16)
+    c.drawCentredString(300, 750, "ARTICLES OF INCORPORATION")
+    c.setFont("Helvetica", 12)
+    
+    # Article I - Company Name
+    c.drawString(50, 700, "ARTICLE I: The name of this corporation is:")
+    c.drawString(70, 680, company_data.company_name)
+    
+    # Article II - Purpose
+    c.drawString(50, 630, "ARTICLE II: The purpose of the corporation is to engage in any lawful act or activity")
+    c.drawString(50, 610, "for which a corporation may be organized under the Nevada Revised Statutes.")
+    
+    # Article III - Agent for Service
+    c.drawString(50, 560, "ARTICLE III: The name and address in Nevada of the corporation's initial agent for service of process is:")
+    c.drawString(70, 540, "Nevada Registered Agent, Inc.")
+    c.drawString(70, 520, "123 Main Street")
+    c.drawString(70, 500, "Las Vegas, NV 89101")
+    
+    # Incorporator
+    c.drawString(50, 200, f"IN WITNESS WHEREOF, the undersigned, being the incorporator hereinbefore named,")
+    c.drawString(50, 180, f"has executed these Articles of Incorporation this {datetime.now().strftime('%d')} day of")
+    c.drawString(50, 160, f"{datetime.now().strftime('%B, %Y')}.")
+    
+    c.drawString(50, 100, "Incorporator:")
+    c.drawString(70, 80, company_data.incorporator_name)
+    
+    c.save()
+    buffer.seek(0)
+    return buffer
+
+def generate_nevada_llc_certificate(company_data: CompanyFormation) -> BytesIO:
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+    
+    # Set up the document
+    c.setFont("Helvetica-Bold", 16)
+    c.drawCentredString(300, 750, "ARTICLES OF ORGANIZATION")
+    c.setFont("Helvetica", 12)
+    
+    # Article I - Company Name
+    c.drawString(50, 700, "ARTICLE I: The name of the limited liability company is:")
+    c.drawString(70, 680, company_data.company_name)
+    
+    # Article II - Purpose
+    c.drawString(50, 630, "ARTICLE II: The purpose of the limited liability company is to engage in any lawful business.")
+    
+    # Article III - Agent for Service
+    c.drawString(50, 560, "ARTICLE III: The name and address in Nevada of the LLC's initial agent for service of process is:")
+    c.drawString(70, 540, "Nevada Registered Agent, Inc.")
+    c.drawString(70, 520, "123 Main Street")
+    c.drawString(70, 500, "Las Vegas, NV 89101")
+    
+    # Execution
+    c.drawString(50, 200, f"IN WITNESS WHEREOF, the undersigned has executed these Articles of Organization this {datetime.now().strftime('%d')} day of")
+    c.drawString(50, 180, f"{datetime.now().strftime('%B, %Y')}.")
+    
+    c.drawString(50, 100, "Authorized Person:")
+    c.drawString(70, 80, company_data.incorporator_name)
+    
+    c.save()
+    buffer.seek(0)
+    return buffer
+
 @app.route('/form-company', methods=['POST'])
 def form_company():
     try:
@@ -208,9 +277,16 @@ def form_company():
                 pdf_buffer = generate_california_llc_certificate(company_data)
             else:
                 return jsonify({"error": "Unsupported company type"}), 400
+        elif company_data.state_of_formation == 'NV':
+            if company_data.company_type == 'corporation':
+                pdf_buffer = generate_nevada_articles(company_data)
+            elif company_data.company_type == 'LLC':
+                pdf_buffer = generate_nevada_llc_certificate(company_data)
+            else:
+                return jsonify({"error": "Unsupported company type"}), 400
         else:
             return jsonify({
-                "error": "Only Delaware and California entities are supported at this time"
+                "error": "Only Delaware, California and Nevada entities are supported at this time"
             }), 400
     
         return send_file(
