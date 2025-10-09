@@ -7,8 +7,13 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from datetime import datetime
 import os
+import logging
 
 app = Flask(__name__)
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class CompanyFormation(BaseModel):
     company_name: str = Field(..., description="Company name")
@@ -213,6 +218,7 @@ def form_company():
                 "error": "Only Delaware and California entities are supported at this time"
             }), 400
     
+        logger.info(f"Successfully generated {company_data.company_type} certificate for {company_data.company_name} in {company_data.state_of_formation}")
         return send_file(
             pdf_buffer,
             mimetype='application/pdf',
@@ -220,7 +226,8 @@ def form_company():
             download_name=f"{company_data.company_name}_certificate.pdf"
         )
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        logger.error(f"Error processing company formation request: {str(e)}", exc_info=True)
+        return jsonify({"error": "An error occurred while processing your request"}), 400
 
 @app.route('/form-company-schema', methods=['GET'])
 def form_company_schema():
