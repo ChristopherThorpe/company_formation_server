@@ -148,32 +148,148 @@ def generate_california_articles(company_data: CompanyFormation) -> BytesIO:
 def generate_california_llc_certificate(company_data: CompanyFormation) -> BytesIO:
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=letter)
-    
+
     # Set up the document
     c.setFont("Helvetica-Bold", 16)
     c.drawCentredString(300, 750, "ARTICLES OF ORGANIZATION")
     c.setFont("Helvetica", 12)
-    
+
     # Article I - Company Name
     c.drawString(50, 700, "ARTICLE I: The name of the limited liability company is:")
     c.drawString(70, 680, company_data.company_name)
-    
+
     # Article II - Purpose
     c.drawString(50, 630, "ARTICLE II: The purpose of the limited liability company is to engage in any lawful business.")
-    
+
     # Article III - Agent for Service
     c.drawString(50, 560, "ARTICLE III: The name and address in California of the LLC's initial agent for service of process is:")
     c.drawString(70, 540, "California Registered Agent, Inc.")
     c.drawString(70, 520, "123 Main Street")
     c.drawString(70, 500, "Los Angeles, CA 90001")
-    
+
     # Execution
     c.drawString(50, 200, f"IN WITNESS WHEREOF, the undersigned has executed these Articles of Organization this {datetime.now().strftime('%d')} day of")
     c.drawString(50, 180, f"{datetime.now().strftime('%B, %Y')}.")
-    
+
     c.drawString(50, 100, "Authorized Person:")
     c.drawString(70, 80, company_data.incorporator_name)
-    
+
+    c.save()
+    buffer.seek(0)
+    return buffer
+
+def generate_generic_articles(company_data: CompanyFormation) -> BytesIO:
+    """Generate generic articles of incorporation for any US state"""
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+
+    # State names mapping
+    state_names = {
+        'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas',
+        'CA': 'California', 'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware',
+        'FL': 'Florida', 'GA': 'Georgia', 'HI': 'Hawaii', 'ID': 'Idaho',
+        'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa', 'KS': 'Kansas',
+        'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland',
+        'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi',
+        'MO': 'Missouri', 'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada',
+        'NH': 'New Hampshire', 'NJ': 'New Jersey', 'NM': 'New Mexico', 'NY': 'New York',
+        'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio', 'OK': 'Oklahoma',
+        'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina',
+        'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah',
+        'VT': 'Vermont', 'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia',
+        'WI': 'Wisconsin', 'WY': 'Wyoming', 'DC': 'District of Columbia',
+        'PR': 'Puerto Rico', 'GU': 'Guam', 'VI': 'Virgin Islands',
+        'AS': 'American Samoa', 'MP': 'Northern Mariana Islands'
+    }
+
+    state_full_name = state_names.get(company_data.state_of_formation, company_data.state_of_formation)
+
+    # Set up the document
+    c.setFont("Helvetica-Bold", 16)
+    c.drawCentredString(300, 750, "ARTICLES OF INCORPORATION")
+    c.setFont("Helvetica", 12)
+
+    # Article I - Company Name
+    c.drawString(50, 700, "ARTICLE I: The name of this corporation is:")
+    c.drawString(70, 680, company_data.company_name)
+
+    # Article II - Purpose
+    c.drawString(50, 630, "ARTICLE II: The purpose of the corporation is to engage in any lawful act or activity")
+    c.drawString(50, 610, f"for which a corporation may be organized under the laws of {state_full_name}.")
+
+    # Article III - Registered Office
+    c.drawString(50, 560, f"ARTICLE III: The registered office address in {state_full_name} is:")
+    c.drawString(70, 540, "To be determined by the Board of Directors")
+
+    # Article IV - Authorized Shares
+    c.drawString(50, 490, "ARTICLE IV: The total number of shares of stock which this corporation is authorized")
+    c.drawString(50, 470, "to issue is 1,000 shares of Common Stock with $0.01 par value per share.")
+
+    # Incorporator
+    c.drawString(50, 200, f"IN WITNESS WHEREOF, the undersigned, being the incorporator hereinbefore named,")
+    c.drawString(50, 180, f"has executed these Articles of Incorporation this {datetime.now().strftime('%d')} day of")
+    c.drawString(50, 160, f"{datetime.now().strftime('%B, %Y')}.")
+
+    c.drawString(50, 100, "Incorporator:")
+    c.drawString(70, 80, company_data.incorporator_name)
+
+    c.save()
+    buffer.seek(0)
+    return buffer
+
+def generate_generic_llc_certificate(company_data: CompanyFormation) -> BytesIO:
+    """Generate generic certificate of formation for LLC in any US state"""
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+
+    # State names mapping
+    state_names = {
+        'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas',
+        'CA': 'California', 'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware',
+        'FL': 'Florida', 'GA': 'Georgia', 'HI': 'Hawaii', 'ID': 'Idaho',
+        'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa', 'KS': 'Kansas',
+        'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland',
+        'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi',
+        'MO': 'Missouri', 'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada',
+        'NH': 'New Hampshire', 'NJ': 'New Jersey', 'NM': 'New Mexico', 'NY': 'New York',
+        'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio', 'OK': 'Oklahoma',
+        'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina',
+        'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah',
+        'VT': 'Vermont', 'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia',
+        'WI': 'Wisconsin', 'WY': 'Wyoming', 'DC': 'District of Columbia',
+        'PR': 'Puerto Rico', 'GU': 'Guam', 'VI': 'Virgin Islands',
+        'AS': 'American Samoa', 'MP': 'Northern Mariana Islands'
+    }
+
+    state_full_name = state_names.get(company_data.state_of_formation, company_data.state_of_formation)
+
+    # Set up the document
+    c.setFont("Helvetica-Bold", 16)
+    c.drawCentredString(300, 750, "CERTIFICATE OF FORMATION")
+    c.setFont("Helvetica", 12)
+
+    # Article First - Company Name
+    c.drawString(50, 700, "FIRST: The name of the limited liability company is:")
+    c.drawString(70, 680, company_data.company_name)
+
+    # Article Second - Purpose
+    c.drawString(50, 630, "SECOND: The purpose of the limited liability company is to engage in any lawful")
+    c.drawString(50, 610, f"business for which limited liability companies may be organized under the laws of {state_full_name}.")
+
+    # Article Third - Registered Office
+    c.drawString(50, 560, f"THIRD: The registered office address in {state_full_name} is:")
+    c.drawString(70, 540, "To be determined by the members")
+
+    # Article Fourth - Management
+    c.drawString(50, 490, "FOURTH: The limited liability company shall be managed by its members.")
+
+    # Execution
+    c.drawString(50, 200, f"IN WITNESS WHEREOF, the undersigned has executed this Certificate of Formation this {datetime.now().strftime('%d')} day of")
+    c.drawString(50, 180, f"{datetime.now().strftime('%B, %Y')}.")
+
+    c.drawString(50, 100, "Authorized Person:")
+    c.drawString(70, 80, company_data.incorporator_name)
+
     c.save()
     buffer.seek(0)
     return buffer
@@ -191,9 +307,10 @@ def form_company():
                 "company_type": request.form.get("company_type"),
                 "incorporator_name": request.form.get("incorporator_name")
             }
-        
+
         company_data = CompanyFormation(**data)
-        
+
+        # Use state-specific templates for DE and CA, generic for all others
         if company_data.state_of_formation == 'DE':
             if company_data.company_type == 'corporation':
                 pdf_buffer = generate_delaware_articles(company_data)
@@ -209,10 +326,14 @@ def form_company():
             else:
                 return jsonify({"error": "Unsupported company type"}), 400
         else:
-            return jsonify({
-                "error": "Only Delaware and California entities are supported at this time"
-            }), 400
-    
+            # All other states use generic templates
+            if company_data.company_type == 'corporation':
+                pdf_buffer = generate_generic_articles(company_data)
+            elif company_data.company_type == 'LLC':
+                pdf_buffer = generate_generic_llc_certificate(company_data)
+            else:
+                return jsonify({"error": "Unsupported company type"}), 400
+
         return send_file(
             pdf_buffer,
             mimetype='application/pdf',

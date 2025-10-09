@@ -1,5 +1,5 @@
 import pytest
-from app import CompanyFormation, generate_delaware_articles, generate_california_articles, generate_california_llc_certificate
+from app import CompanyFormation, generate_delaware_articles, generate_delaware_llc_certificate, generate_california_articles, generate_california_llc_certificate, generate_generic_articles, generate_generic_llc_certificate
 from pydantic import ValidationError
 from PyPDF2 import PdfReader
 import io
@@ -90,15 +90,100 @@ def test_california_llc_pdf():
         "company_type": "LLC",
         "incorporator_name": "Testy McTestface"
     }
-    
+
     pdf_buffer = generate_california_llc_certificate(CompanyFormation(**test_data))
     pdf_buffer.seek(0)
-    
+
     reader = PdfReader(pdf_buffer)
     text = "\n".join(page.extract_text() for page in reader.pages)
-    
+
     assert "California Test LLC" in text
     assert "ARTICLES OF ORGANIZATION" in text
     assert "ARTICLE I: The name of the limited liability company is:" in text
     assert "ARTICLE II: The purpose of the limited liability company" in text
     assert "ARTICLE III: The name and address in California" in text
+
+def test_generic_corporation_pdf():
+    """Test generic corporation PDF for non-DE/CA states"""
+    test_data = {
+        "company_name": "Texas Test Corp",
+        "state_of_formation": "TX",
+        "company_type": "corporation",
+        "incorporator_name": "Testy McTestface"
+    }
+
+    pdf_buffer = generate_generic_articles(CompanyFormation(**test_data))
+    pdf_buffer.seek(0)
+
+    reader = PdfReader(pdf_buffer)
+    text = "\n".join(page.extract_text() for page in reader.pages)
+
+    assert "Texas Test Corp" in text
+    assert "ARTICLES OF INCORPORATION" in text
+    assert "ARTICLE I: The name of this corporation is:" in text
+    assert "Texas" in text
+    assert "Testy McTestface" in text
+
+def test_generic_llc_pdf():
+    """Test generic LLC PDF for non-DE/CA states"""
+    test_data = {
+        "company_name": "New York Test LLC",
+        "state_of_formation": "NY",
+        "company_type": "LLC",
+        "incorporator_name": "Testy McTestface"
+    }
+
+    pdf_buffer = generate_generic_llc_certificate(CompanyFormation(**test_data))
+    pdf_buffer.seek(0)
+
+    reader = PdfReader(pdf_buffer)
+    text = "\n".join(page.extract_text() for page in reader.pages)
+
+    assert "New York Test LLC" in text
+    assert "CERTIFICATE OF FORMATION" in text
+    assert "FIRST: The name of the limited liability company is:" in text
+    assert "New York" in text
+    assert "Testy McTestface" in text
+
+def test_all_states_supported():
+    """Test that all valid states can generate PDFs"""
+    # Test a sample of states with both company types
+    sample_states = ['FL', 'IL', 'MA', 'WA', 'CO', 'NV', 'OR', 'VA']
+
+    for state in sample_states:
+        # Test corporation
+        corp_data = {
+            "company_name": f"{state} Test Corp",
+            "state_of_formation": state,
+            "company_type": "corporation",
+            "incorporator_name": "Test User"
+        }
+        company = CompanyFormation(**corp_data)
+
+        if state in ['DE', 'CA']:
+            # These states have specific implementations
+            continue
+        else:
+            pdf_buffer = generate_generic_articles(company)
+            assert pdf_buffer is not None
+            pdf_buffer.seek(0)
+            reader = PdfReader(pdf_buffer)
+            assert len(reader.pages) > 0
+
+        # Test LLC
+        llc_data = {
+            "company_name": f"{state} Test LLC",
+            "state_of_formation": state,
+            "company_type": "LLC",
+            "incorporator_name": "Test User"
+        }
+        company = CompanyFormation(**llc_data)
+
+        if state in ['DE', 'CA']:
+            continue
+        else:
+            pdf_buffer = generate_generic_llc_certificate(company)
+            assert pdf_buffer is not None
+            pdf_buffer.seek(0)
+            reader = PdfReader(pdf_buffer)
+            assert len(reader.pages) > 0
