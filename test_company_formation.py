@@ -1,5 +1,12 @@
 import pytest
-from app import CompanyFormation, generate_delaware_articles, generate_california_articles, generate_california_llc_certificate
+from app import (
+    CompanyFormation,
+    generate_delaware_articles,
+    generate_california_articles,
+    generate_california_llc_certificate,
+    generate_massachusetts_articles,
+    generate_massachusetts_llc_certificate,
+)
 from pydantic import ValidationError
 from PyPDF2 import PdfReader
 import io
@@ -102,3 +109,45 @@ def test_california_llc_pdf():
     assert "ARTICLE I: The name of the limited liability company is:" in text
     assert "ARTICLE II: The purpose of the limited liability company" in text
     assert "ARTICLE III: The name and address in California" in text
+
+
+def test_massachusetts_corporation_pdf():
+    test_data = {
+        "company_name": "Massachusetts Test Corp",
+        "state_of_formation": "MA",
+        "company_type": "corporation",
+        "incorporator_name": "Testy McTestface"
+    }
+
+    pdf_buffer = generate_massachusetts_articles(CompanyFormation(**test_data))
+    pdf_buffer.seek(0)
+
+    reader = PdfReader(pdf_buffer)
+    text = "\n".join(page.extract_text() for page in reader.pages)
+
+    assert "Massachusetts Test Corp" in text
+    assert "ARTICLES OF ORGANIZATION" in text
+    assert "ARTICLE I: The name of the corporation is:" in text
+    assert "ARTICLE III: The street address of the corporation's principal office is:" in text
+    assert "Boston, Massachusetts 02109" in text
+
+
+def test_massachusetts_llc_pdf():
+    test_data = {
+        "company_name": "Massachusetts Test LLC",
+        "state_of_formation": "MA",
+        "company_type": "LLC",
+        "incorporator_name": "Testy McTestface"
+    }
+
+    pdf_buffer = generate_massachusetts_llc_certificate(CompanyFormation(**test_data))
+    pdf_buffer.seek(0)
+
+    reader = PdfReader(pdf_buffer)
+    text = "\n".join(page.extract_text() for page in reader.pages)
+
+    assert "Massachusetts Test LLC" in text
+    assert "CERTIFICATE OF ORGANIZATION" in text
+    assert "ARTICLE I: The name of the limited liability company is:" in text
+    assert "ARTICLE III: The street address of the office in the Commonwealth is:" in text
+    assert "Boston, Massachusetts 02109" in text

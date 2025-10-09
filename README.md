@@ -1,6 +1,6 @@
 # Company Formation Server
 
-This server accepts company formation data and generates Articles of Incorporation for Delaware corporations.
+This server accepts company formation data and generates formation documents for Delaware, California, and Massachusetts entities.
 
 ## Setup
 
@@ -34,7 +34,7 @@ Send a POST request to `/form-company` with a JSON payload in the following form
 - Incorporator name: Required field
 
 ### Response:
-- For Delaware corporations: Returns a PDF file containing the Articles of Incorporation
+- For supported states/company types (Delaware, California, and Massachusetts corporations and LLCs): Returns a PDF file containing the appropriate formation document
 - For other states/company types: Returns a 400 error indicating unsupported formation type
 
 ## Example cURL Request:
