@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, send_file
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Literal
 import re
 from io import BytesIO
@@ -16,13 +16,15 @@ class CompanyFormation(BaseModel):
     company_type: Literal["corporation", "LLC"] = Field(..., description="Type of company")
     incorporator_name: str = Field(..., description="Name of incorporator")
 
-    @validator('company_name')
+    @field_validator('company_name')
+    @classmethod
     def validate_company_name(cls, v):
         if not re.match(r'^[a-zA-Z0-9\s,\.\'&]+$', v):
             raise ValueError('Company name can only contain alphanumeric characters, spaces, commas, periods, apostrophes, and ampersands')
         return v
 
-    @validator('state_of_formation')
+    @field_validator('state_of_formation')
+    @classmethod
     def validate_state(cls, v):
         states = {
             'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
