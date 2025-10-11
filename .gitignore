@@ -173,3 +173,7 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 .vercel
+
+# generated pdf:
+acme_ny.pdf
+out.pdf

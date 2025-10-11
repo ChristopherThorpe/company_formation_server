@@ -178,6 +178,77 @@ def generate_california_llc_certificate(company_data: CompanyFormation) -> Bytes
     buffer.seek(0)
     return buffer
 
+def generate_newyork_articles(company_data: CompanyFormation) -> BytesIO:
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+
+    c.setFont("Helvetica-Bold", 16)
+    c.drawCentredString(300, 750, "CERTIFICATE OF INCORPORATION")
+    c.setFont("Helvetica", 12)
+
+    # Article First - Company Name
+    c.drawString(50, 700, "FIRST: The name of this corporation is:")
+    c.drawString(70, 680, company_data.company_name)
+
+    # Article Second - Registered Office / Company Address
+    c.drawString(50, 630, "SECOND: Its registered office in the State of New York is located at:")
+    c.drawString(70, 610, "418 BROADWAY STE Y, ALBANY, ALBANY COUNTY, NY 12207")
+
+    # Article Third - Purpose (must end with required phrase)
+    c.drawString(50, 560, "THIRD: The purpose of the corporation is to engage in any lawful act or activity")
+    c.drawString(50, 540, "which corporations may be organized under Section 402 of the Business Corporation Law.")
+
+    # Article Fourth - Authorized Shares (simple default)
+    c.drawString(50, 490, "FOURTH: The total number of shares of stock which this corporation is authorized")
+    c.drawString(50, 470, "to issue is 1,000 shares of Common Stock with $0.01 par value per share.")
+
+    # Incorporator / Execution
+    c.drawString(50, 200, f"IN WITNESS WHEREOF, the undersigned, the incorporator named below,")
+    c.drawString(50, 180, f"has executed this Certificate of Incorporation this {datetime.now().strftime('%d')} day of")
+    c.drawString(50, 160, f"{datetime.now().strftime('%B, %Y')}.")
+
+    c.drawString(50, 100, "Incorporator:")
+    c.drawString(70, 80, company_data.incorporator_name)
+
+    c.save()
+    buffer.seek(0)
+    return buffer
+
+def generate_newyork_llc_certificate(company_data: CompanyFormation) -> BytesIO:
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+
+    c.setFont("Helvetica-Bold", 16)
+    c.drawCentredString(300, 750, "ARTICLES OF ORGANIZATION")
+    c.setFont("Helvetica", 12)
+
+    # Article I - Company Name
+    c.drawString(50, 700, "ARTICLE I: The name of the limited liability company is:")
+    c.drawString(70, 680, company_data.company_name)
+
+    # Article II - Company / Registered Office Address
+    c.drawString(50, 630, "ARTICLE II: The address of its registered office in the State of New York is:")
+    c.drawString(70, 610, "418 BROADWAY STE Y, ALBANY, ALBANY COUNTY, NY 12207")
+
+    # Article III - Registered Agent (use same address)
+    c.drawString(50, 560, "ARTICLE III: The name and address of the LLC's registered agent in the State of New York is:")
+    c.drawString(70, 540, "Registered Agent at the same address")
+    c.drawString(70, 520, "418 BROADWAY STE Y, ALBANY, ALBANY COUNTY, NY 12207")
+
+    # Management / Purpose
+    c.drawString(50, 480, "ARTICLE IV: The limited liability company shall be managed by its members.")
+
+    # Execution
+    c.drawString(50, 200, f"IN WITNESS WHEREOF, the undersigned has executed these Articles of Organization this {datetime.now().strftime('%d')} day of")
+    c.drawString(50, 180, f"{datetime.now().strftime('%B, %Y')}.")
+
+    c.drawString(50, 100, "Authorized Person:")
+    c.drawString(70, 80, company_data.incorporator_name)
+
+    c.save()
+    buffer.seek(0)
+    return buffer
+
 @app.route('/form-company', methods=['POST'])
 def form_company():
     try:
@@ -208,9 +279,16 @@ def form_company():
                 pdf_buffer = generate_california_llc_certificate(company_data)
             else:
                 return jsonify({"error": "Unsupported company type"}), 400
+        elif company_data.state_of_formation == 'NY':
+            if company_data.company_type == 'corporation':
+                pdf_buffer = generate_newyork_articles(company_data)
+            elif company_data.company_type == 'LLC':
+                pdf_buffer = generate_newyork_llc_certificate(company_data)
+            else:
+                return jsonify({"error": "Unsupported company type"}), 400
         else:
             return jsonify({
-                "error": "Only Delaware and California entities are supported at this time"
+                "error": "Only Delaware, California, and New York entities are supported at this time"
             }), 400
     
         return send_file(
