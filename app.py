@@ -178,6 +178,96 @@ def generate_california_llc_certificate(company_data: CompanyFormation) -> Bytes
     buffer.seek(0)
     return buffer
 
+def generate_new_york_llc_certificate(company_data: CompanyFormation) -> BytesIO:
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+    
+    # Set up the document
+    c.setFont("Helvetica-Bold", 16)
+    c.drawCentredString(300, 750, "ARTICLES OF ORGANIZATION")
+    c.setFont("Helvetica", 12)
+    c.drawCentredString(300, 730, "OF")
+    c.drawCentredString(300, 710, f"{company_data.company_name}")
+    c.drawCentredString(300, 690, "Under Section 203 of the Limited Liability Company Law")
+    
+    # Article First - Company Name
+    c.drawString(50, 650, "FIRST: The name of the limited liability company is:")
+    c.drawString(70, 630, company_data.company_name)
+    
+    # Article Second - County
+    c.drawString(50, 590, "SECOND: The county, within this state, in which the office of the limited liability company is to be")
+    c.drawString(50, 570, "located is: ALBANY COUNTY.")
+    
+    # Article Third - Secretary of State as Agent
+    c.drawString(50, 530, "THIRD: The Secretary of State is designated as agent of the limited liability company upon whom")
+    c.drawString(50, 510, "process against the limited liability company be served.")
+    c.drawString(50, 490, "The post office address to which the Secretary of State shall mail a copy of any process against")
+    c.drawString(50, 470, "the limited liability company upon the Secretary of State by personal delivery is:")
+    c.drawString(70, 450, "418 BROADWAY STE Y, ALBANY, ALBANY COUNTY, NY 12207")
+    
+    # Signature section
+    c.drawString(50, 370, "Organizer:")
+    c.drawString(70, 350, f"/s/ {company_data.incorporator_name}")
+    c.drawString(70, 330, "418 BROADWAY STE Y, ALBANY, ALBANY COUNTY, NY 12207")
+
+    c.drawString(50, 290, "Filer's Name and Address:")
+    c.drawString(70, 270, f"/s/ {company_data.incorporator_name}")
+    c.drawString(70, 250, "418 BROADWAY STE Y, ALBANY, ALBANY COUNTY, NY 12207")
+
+    c.save()
+    buffer.seek(0)
+    return buffer
+
+def generate_new_york_corporation_certificate(company_data: CompanyFormation) -> BytesIO:
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+    
+    # Set up the document
+    c.setFont("Helvetica-Bold", 16)
+    c.drawCentredString(300, 750, "CERTIFICATE OF INCORPORATION")
+    c.setFont("Helvetica", 12)
+    c.drawCentredString(300, 730, "OF")
+    c.drawCentredString(300, 710, f"{company_data.company_name}")
+    c.drawCentredString(300, 690, "Under Section 402 of the Business Corporation Law")
+    
+    # Article First - Company Name
+    c.drawString(50, 650, "FIRST: The name of this corporation is:")
+    c.drawString(70, 630, company_data.company_name)
+    
+    # Article Second - Purpose
+    c.drawString(50, 590, "SECOND: The purpose of the corporation is to engage in any lawful act or activity for which")
+    c.drawString(50, 570, "a corporation may be organized under the Business Corporation Law. The corporation is not")
+    c.drawString(50, 550, "formed to engage in any act or activity requiring the consent or approval of any state official,")
+    c.drawString(50, 530, "department, board, agency or other body without such consent or approval first being obtained.")
+    
+    # Article Third - County
+    c.drawString(50, 490, "THIRD: The county, within this state, in which the office of the corporation is to be located")
+    c.drawString(50, 470, "is: ALBANY COUNTY.")
+    
+    # Article Fourth - Share Authorization
+    c.drawString(50, 430, "FOURTH: The corporation shall have authority to issue one class of shares consisting of")
+    c.drawString(50, 410, "1,000 common shares with $0.01 par value per share.")
+    
+    # Article Fifth - Secretary of State as Agent
+    c.drawString(50, 370, "FIFTH: The Secretary of State is designated as agent of the corporation upon whom process")
+    c.drawString(50, 350, "against the corporation may be served.")
+    c.drawString(50, 330, "The post office address to which the Secretary of State shall mail a copy of any process")
+    c.drawString(50, 310, "against the corporation served upon the Secretary of State by personal delivery is:")
+    c.drawString(70, 290, "418 BROADWAY STE Y, ALBANY, ALBANY COUNTY, NY 12207")
+    
+    # Signature section  
+    c.drawString(50, 230, "Incorporator:")
+    c.drawString(70, 210, f"/s/ {company_data.incorporator_name}")
+    c.drawString(70, 190, "418 BROADWAY STE Y, ALBANY, ALBANY COUNTY, NY 12207")
+    
+    c.drawString(50, 150, "Filer's Name and Address:")
+    c.drawString(70, 130, f"/s/ {company_data.incorporator_name}")
+    c.drawString(70, 110, "418 BROADWAY STE Y, ALBANY, ALBANY COUNTY, NY 12207")
+
+    c.save()
+    buffer.seek(0)
+    return buffer
+
 @app.route('/form-company', methods=['POST'])
 def form_company():
     try:
@@ -208,9 +298,16 @@ def form_company():
                 pdf_buffer = generate_california_llc_certificate(company_data)
             else:
                 return jsonify({"error": "Unsupported company type"}), 400
+        elif company_data.state_of_formation == 'NY':
+            if company_data.company_type == 'LLC':
+                pdf_buffer = generate_new_york_llc_certificate(company_data)
+            elif company_data.company_type == 'corporation':
+                pdf_buffer = generate_new_york_corporation_certificate(company_data)
+            else:
+                return jsonify({"error": "Unsupported company type"}), 400
         else:
             return jsonify({
-                "error": "Only Delaware and California entities are supported at this time"
+                "error": "Only Delaware, California, and New York entities are supported at this time"
             }), 400
     
         return send_file(
@@ -248,6 +345,18 @@ def form_company_schema():
             "state_of_formation": "CA",
             "company_type": "LLC",
             "incorporator_name": "Emily Chen"
+        },
+        {
+            "company_name": "Empire State Ventures, LLC",
+            "state_of_formation": "NY",
+            "company_type": "LLC",
+            "incorporator_name": "Sarah Williams"
+        },
+        {
+            "company_name": "Manhattan Tech Corp",
+            "state_of_formation": "NY",
+            "company_type": "corporation",
+            "incorporator_name": "David Chen"
         }
     ]
     return jsonify(examples)
