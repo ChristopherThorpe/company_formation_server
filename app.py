@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, send_file
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Literal
 import re
 from io import BytesIO
@@ -16,13 +16,13 @@ class CompanyFormation(BaseModel):
     company_type: Literal["corporation", "LLC"] = Field(..., description="Type of company")
     incorporator_name: str = Field(..., description="Name of incorporator")
 
-    @validator('company_name')
+    @field_validator('company_name')
     def validate_company_name(cls, v):
         if not re.match(r'^[a-zA-Z0-9\s,\.\'&]+$', v):
             raise ValueError('Company name can only contain alphanumeric characters, spaces, commas, periods, apostrophes, and ampersands')
         return v
 
-    @validator('state_of_formation')
+    @field_validator('state_of_formation')
     def validate_state(cls, v):
         states = {
             'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
@@ -178,6 +178,126 @@ def generate_california_llc_certificate(company_data: CompanyFormation) -> Bytes
     buffer.seek(0)
     return buffer
 
+
+def generate_newyork_articles(company_data: CompanyFormation) -> BytesIO:
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+
+    # Header
+    c.setFont("Helvetica-Bold", 16)
+    c.drawCentredString(300, 750, "CERTIFICATE OF INCORPORATION")
+    c.setFont("Helvetica", 12)
+    c.drawCentredString(300, 730, "OF")
+    c.setFont("Helvetica-Bold", 14)
+    c.drawCentredString(300, 710, company_data.company_name)
+    c.setFont("Helvetica", 11)
+    c.drawCentredString(300, 690, "Under Section 402 of the Business Corporation Law")
+
+    y = 650
+    left = 50
+    line = 18
+    c.setFont("Helvetica", 11)
+
+    # FIRST — Name
+    c.drawString(left, y, "FIRST: The name of the corporation is:")
+    y -= line
+    c.drawString(left + 20, y, company_data.company_name)
+
+    # SECOND — Purpose (standard NY boilerplate)
+    y -= (line * 2)
+    c.drawString(left, y, "SECOND: The purpose of the corporation is to engage in any lawful act or activity for which")
+    y -= line
+    c.drawString(left, y, "a corporation may be organized under the Business Corporation Law.")
+
+    # THIRD — County (fixed default since API doesn't collect county)
+    y -= (line * 2)
+    c.drawString(left, y, "THIRD: The county, within this state, in which the office of the corporation is to be located")
+    y -= line
+    c.drawString(left, y, "is: NEW YORK COUNTY.")
+
+    # FOURTH — Shares (use common NY template)
+    y -= (line * 2)
+    c.drawString(left, y, "FOURTH: The corporation is authorized to issue 200 shares of common stock without par value.")
+
+    # FIFTH — Secretary of State as agent for service
+    y -= (line * 2)
+    c.drawString(left, y, "FIFTH: The Secretary of State is designated as agent of the corporation upon whom process")
+    y -= line
+    c.drawString(left, y, "against the corporation may be served. The address to which the Secretary of State shall mail")
+    y -= line
+    c.drawString(left, y, "a copy of any process accepted on behalf of the corporation is:")
+    y -= line
+    c.drawString(left + 20, y, "(Mail to the corporation at the address of the incorporator.)")
+
+    # Signature block
+    y -= (line * 3)
+    c.drawString(left, y, "IN WITNESS WHEREOF, the undersigned has signed this Certificate.")
+    y -= (line * 2)
+    c.drawString(left, y, f"Date: {datetime.now().strftime('%B %d, %Y')}")
+    y -= line
+    c.drawString(left, y, f"Incorporator: {company_data.incorporator_name}")
+    y -= line
+    c.drawString(left, y, "Signature: ____________________")
+
+    c.save()
+    buffer.seek(0)
+    return buffer
+
+
+def generate_newyork_llc_certificate(company_data: CompanyFormation) -> BytesIO:
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+
+    # Header
+    c.setFont("Helvetica-Bold", 16)
+    c.drawCentredString(300, 750, "ARTICLES OF ORGANIZATION")
+    c.setFont("Helvetica", 12)
+    c.drawCentredString(300, 730, "OF")
+    c.setFont("Helvetica-Bold", 14)
+    c.drawCentredString(300, 710, company_data.company_name)
+    c.setFont("Helvetica", 11)
+    c.drawCentredString(300, 690, "Under Section 203 of the Limited Liability Company Law")
+
+    y = 650
+    left = 50
+    line = 18
+    c.setFont("Helvetica", 11)
+
+    # FIRST — Name
+    c.drawString(left, y, "FIRST: The name of the limited liability company is:")
+    y -= line
+    c.drawString(left + 20, y, company_data.company_name)
+
+    # SECOND — County
+    y -= (line * 2)
+    c.drawString(left, y, "SECOND: The county within this state in which the office of the limited liability")
+    y -= line
+    c.drawString(left, y, "company is to be located is: NEW YORK COUNTY.")
+
+    # THIRD — Secretary of State as agent for service
+    y -= (line * 2)
+    c.drawString(left, y, "THIRD: The Secretary of State is designated as agent of the limited liability company upon")
+    y -= line
+    c.drawString(left, y, "whom process against it may be served. The address to which the Secretary of State shall mail")
+    y -= line
+    c.drawString(left, y, "a copy of any process accepted on behalf of the limited liability company is:")
+    y -= line
+    c.drawString(left + 20, y, "(Mail to the LLC at the address of the organizer.)")
+
+    # Signature block
+    y -= (line * 3)
+    c.drawString(left, y, "IN WITNESS WHEREOF, the undersigned has signed these Articles of Organization.")
+    y -= (line * 2)
+    c.drawString(left, y, f"Date: {datetime.now().strftime('%B %d, %Y')}")
+    y -= line
+    c.drawString(left, y, f"Organizer: {company_data.incorporator_name}")
+    y -= line
+    c.drawString(left, y, "Signature: ____________________")
+
+    c.save()
+    buffer.seek(0)
+    return buffer
+
 @app.route('/form-company', methods=['POST'])
 def form_company():
     try:
@@ -208,9 +328,16 @@ def form_company():
                 pdf_buffer = generate_california_llc_certificate(company_data)
             else:
                 return jsonify({"error": "Unsupported company type"}), 400
+        elif company_data.state_of_formation == 'NY':
+            if company_data.company_type == 'corporation':
+                pdf_buffer = generate_newyork_articles(company_data)
+            elif company_data.company_type == 'LLC':
+                pdf_buffer = generate_newyork_llc_certificate(company_data)
+            else:
+                return jsonify({"error": "Unsupported company type"}), 400
         else:
             return jsonify({
-                "error": "Only Delaware and California entities are supported at this time"
+                "error": "Only Delaware, New York, and California entities are supported at this time"
             }), 400
     
         return send_file(
@@ -248,6 +375,18 @@ def form_company_schema():
             "state_of_formation": "CA",
             "company_type": "LLC",
             "incorporator_name": "Emily Chen"
+        },
+        {
+            "company_name": "Hudson River Robotics, Inc.",
+            "state_of_formation": "NY",
+            "company_type": "corporation",
+            "incorporator_name": "Alex Morgan"
+        },
+        {
+            "company_name": "Brooklyn Bagel Ventures LLC",
+            "state_of_formation": "NY",
+            "company_type": "LLC",
+            "incorporator_name": "Jamie Rivera"
         }
     ]
     return jsonify(examples)
