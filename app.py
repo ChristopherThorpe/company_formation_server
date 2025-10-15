@@ -178,6 +178,95 @@ def generate_california_llc_certificate(company_data: CompanyFormation) -> Bytes
     buffer.seek(0)
     return buffer
 
+def generate_new_york_articles(company_data: CompanyFormation) -> BytesIO:
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+    
+    # Set up the document
+    c.setFont("Helvetica-Bold", 16)
+    c.drawCentredString(300, 750, "CERTIFICATE OF INCORPORATION")
+    c.setFont("Helvetica", 12)
+    
+    # Article First - Company Name
+    c.drawString(50, 700, "FIRST: The name of this corporation is:")
+    c.drawString(70, 680, company_data.company_name)
+    
+    # Article Second - Purpose
+    c.drawString(50, 630, "SECOND: The purpose of the corporation is to engage in any lawful act or activity for")
+    c.drawString(50, 610, "which corporations may be organized under the Business Corporation Law of New York.")
+    
+    # Article Third - Registered Office
+    c.drawString(50, 560, "THIRD: The office of the corporation is to be located in the State of New York.")
+    c.drawString(70, 540, "The address of the corporation's registered office is:")
+    c.drawString(70, 520, "123 Broadway, New York, NY 10001")
+    
+    # Article Fourth - Authorized Shares
+    c.drawString(50, 470, "FOURTH: The total number of shares of stock which this corporation is authorized")
+    c.drawString(50, 450, "to issue is 1,000 shares of Common Stock with $0.01 par value per share.")
+    
+    # Article Fifth - Directors
+    c.drawString(50, 400, "FIFTH: The number of directors constituting the initial board of directors is one (1).")
+    c.drawString(70, 380, f"The name and address of the person who is to serve as director until the first annual")
+    c.drawString(70, 360, f"meeting of shareholders or until his successor is elected and qualified is:")
+    c.drawString(70, 340, f"{company_data.incorporator_name}")
+    c.drawString(70, 320, f"123 Broadway, New York, NY 10001")
+    
+    # Incorporator
+    c.drawString(50, 200, f"IN WITNESS WHEREOF, the undersigned, being the incorporator hereinbefore named,")
+    c.drawString(50, 180, f"has executed this Certificate of Incorporation this {datetime.now().strftime('%d')} day of")
+    c.drawString(50, 160, f"{datetime.now().strftime('%B, %Y')}.")
+    
+    c.drawString(50, 100, "Incorporator:")
+    c.drawString(70, 80, company_data.incorporator_name)
+    
+    c.save()
+    buffer.seek(0)
+    return buffer
+
+def generate_new_york_llc_certificate(company_data: CompanyFormation) -> BytesIO:
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+    
+    # Set up the document
+    c.setFont("Helvetica-Bold", 16)
+    c.drawCentredString(300, 750, "ARTICLES OF ORGANIZATION")
+    c.setFont("Helvetica", 12)
+    
+    # Article First - Company Name
+    c.drawString(50, 700, "FIRST: The name of the limited liability company is:")
+    c.drawString(70, 680, company_data.company_name)
+    
+    # Article Second - Purpose
+    c.drawString(50, 630, "SECOND: The purpose of the limited liability company is to engage in any lawful business.")
+    
+    # Article Third - Registered Office
+    c.drawString(50, 560, "THIRD: The address of the limited liability company's registered office in the State of New York is:")
+    c.drawString(70, 540, "123 Broadway")
+    c.drawString(70, 520, "New York, NY 10001")
+    
+    # Article Fourth - Registered Agent
+    c.drawString(50, 470, "FOURTH: The name and address of the limited liability company's registered agent in the State of New York is:")
+    c.drawString(70, 450, "New York Registered Agent, Inc.")
+    c.drawString(70, 430, "123 Broadway")
+    c.drawString(70, 410, "New York, NY 10001")
+    
+    # Article Fifth - Management
+    c.drawString(50, 360, "FIFTH: The limited liability company shall be managed by its members.")
+    
+    # Article Sixth - Duration
+    c.drawString(50, 310, "SIXTH: The limited liability company shall have perpetual duration.")
+    
+    # Execution
+    c.drawString(50, 200, f"IN WITNESS WHEREOF, the undersigned has executed these Articles of Organization this {datetime.now().strftime('%d')} day of")
+    c.drawString(50, 180, f"{datetime.now().strftime('%B, %Y')}.")
+    
+    c.drawString(50, 100, "Authorized Person:")
+    c.drawString(70, 80, company_data.incorporator_name)
+    
+    c.save()
+    buffer.seek(0)
+    return buffer
+
 @app.route('/form-company', methods=['POST'])
 def form_company():
     try:
@@ -208,9 +297,16 @@ def form_company():
                 pdf_buffer = generate_california_llc_certificate(company_data)
             else:
                 return jsonify({"error": "Unsupported company type"}), 400
+        elif company_data.state_of_formation == 'NY':
+            if company_data.company_type == 'corporation':
+                pdf_buffer = generate_new_york_articles(company_data)
+            elif company_data.company_type == 'LLC':
+                pdf_buffer = generate_new_york_llc_certificate(company_data)
+            else:
+                return jsonify({"error": "Unsupported company type"}), 400
         else:
             return jsonify({
-                "error": "Only Delaware and California entities are supported at this time"
+                "error": "Only Delaware, California, and New York entities are supported at this time"
             }), 400
     
         return send_file(
@@ -248,6 +344,18 @@ def form_company_schema():
             "state_of_formation": "CA",
             "company_type": "LLC",
             "incorporator_name": "Emily Chen"
+        },
+        {
+            "company_name": "Empire State Corp",
+            "state_of_formation": "NY",
+            "company_type": "corporation",
+            "incorporator_name": "Robert Wilson"
+        },
+        {
+            "company_name": "Big Apple Ventures, LLC",
+            "state_of_formation": "NY",
+            "company_type": "LLC",
+            "incorporator_name": "Sarah Martinez"
         }
     ]
     return jsonify(examples)
